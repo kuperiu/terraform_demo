@@ -1,6 +1,13 @@
 provider "aws" {
-  region  = "eu-west-1"
+  alias   = "ireland"
   version = "1.40.0"
+  region  = "eu-west-1"
+}
+
+provider "aws" {
+  alias   = "frankfurt"
+  version = "1.40.0"
+  region  = "eu-central-1"
 }
 
 provider "template" {

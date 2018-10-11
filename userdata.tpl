@@ -8,6 +8,6 @@ sudo apt-get install git
 
 
 sudo mkdir /app
-cd /app && sudo git clone https://github.com/lc-nyovchev/opstest.git
-echo "suchname=$availability_zone" > $prop_file
-cd opstest && sudo ./mvnw spring-boot:run -Dspring.config.location=$prop_file
+cd /app && sudo git clone https://github.com/kuperiu/ops_test.git
+echo "availabilityZone=$availability_zone" > $prop_file
+cd ops_test && sudo ./mvnw spring-boot:run -Dspring.config.location=$prop_file
