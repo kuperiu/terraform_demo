@@ -9,10 +9,6 @@ variable "tags" {
   type = "map"
 }
 
-variable "availability_zones" {
-  type = "list"
-}
-
 variable "desierd_instances" {}
 
 variable "ports" {
@@ -28,6 +24,8 @@ data "template_file" "user_data" {
   template = "${file("userdata.tpl")}"
 }
 
+data "aws_availability_zones" "available" {}
+
 module "basic_sg" {
   source       = "../security_group"
   service_name = "${var.service_name}"
@@ -39,7 +37,7 @@ module "basic_sg" {
 resource "aws_elb" "elb" {
   name               = "${var.service_name}"
   security_groups    = ["${module.basic_sg.basic_sg_id}"]
-  availability_zones = "${var.availability_zones}"
+  availability_zones = ["${data.aws_availability_zones.available.names}"]
 
   health_check {
     healthy_threshold   = 2
@@ -89,14 +87,14 @@ resource "null_resource" "tags_as_list_of_maps" {
 }
 
 resource "aws_autoscaling_group" "asg" {
-  count                = "${length(var.availability_zones)}"
-  name                 = "${var.service_name}-${element(var.availability_zones, count.index)}"
+  name                 = "${var.service_name}"
   launch_configuration = "${aws_launch_configuration.iam_launch_config.name}"
-  availability_zones   = ["${element(var.availability_zones, count.index)}"]
+  availability_zones   = ["${data.aws_availability_zones.available.names}"]
   max_size             = "${var.desierd_instances}"
   min_size             = "${var.desierd_instances}"
   desired_capacity     = "${var.desierd_instances}"
   load_balancers       = ["${aws_elb.elb.name}"]
+  health_check_type    = "ELB"
 
   tags = ["${concat(
       list(map("key", "Name", "value", var.service_name, "propagate_at_launch", true)),
@@ -116,10 +114,19 @@ resource "aws_route53_record" "basic_record" {
   weighted_routing_policy {
     weight = "${var.weighted_routing_policy}"
   }
+
   set_identifier = "${var.identifier}"
+
   alias {
     name                   = "${aws_elb.elb.dns_name}"
     zone_id                = "${aws_elb.elb.zone_id}"
     evaluate_target_health = true
   }
 }
+
+# module "deploy_app" {
+#   source       = "../deploy"
+#   service_name = "${var.service_name}"
+#   elb_name     = "${aws_elb.elb.name}"
+#   asg = "${aws_autoscaling_group.asg.name}"
+# }
