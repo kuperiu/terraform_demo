@@ -5,9 +5,18 @@ variable "tags" {
   type = "map"
 }
 
-variable "ports" {
-  type = "list"
+variable "port" {}
+
+variable "cidr_blocks" {
+  type    = "list"
+  default = ["0.0.0.0/0"]
 }
+
+variable "source_security_group_id" {
+  default = 1234
+}
+
+variable "associated" {}
 
 resource "aws_security_group" "basic_sg" {
   name = "${var.service_name}"
@@ -32,16 +41,31 @@ resource "aws_security_group_rule" "allow_all_out" {
 }
 
 resource "aws_security_group_rule" "basic_sg_rule_with_cidr" {
-  count             = "${length(var.ports)}"
+  count             = "${var.associated ? 0 : 1}"
   type              = "ingress"
-  from_port         = "${element(var.ports, count.index)}"
-  to_port           = "${element(var.ports, count.index)}"
+  from_port         = "${var.port}"
+  to_port           = "${var.port}"
   protocol          = "tcp"
   security_group_id = "${aws_security_group.basic_sg.id}"
-  cidr_blocks       = ["0.0.0.0/0"]
+  cidr_blocks       = "${var.cidr_blocks}"
   depends_on        = ["aws_security_group.basic_sg"]
 }
 
-output "basic_sg_id" {
+resource "aws_security_group_rule" "basic_sg_rule_associated" {
+  count                    = "${var.associated ? 1 : 0}"
+  type                     = "ingress"
+  from_port                = "${var.port}"
+  to_port                  = "${var.port}"
+  protocol                 = "tcp"
+  security_group_id        = "${aws_security_group.basic_sg.id}"
+  source_security_group_id = "${var.source_security_group_id}"
+  depends_on               = ["aws_security_group.basic_sg"]
+}
+
+output "id" {
   value = "${aws_security_group.basic_sg.id}"
+}
+
+output "name" {
+  value = "${aws_security_group.basic_sg.name}"
 }
