@@ -41,7 +41,7 @@ resource "aws_route53_zone" "main" {
 
 resource "aws_key_pair" "basic_key" {
   key_name   = "deployer-key"
-  public_key = "${file("/Users/lkuperiu/.ssh/id_rsa.pub")}"
+  public_key = "${file("~/.ssh/id_rsa.pub")}"
   provider   = "aws.frankfurt"
 }
 
