@@ -1,16 +1,21 @@
 variable "service_name" {}
 
+#auto scaling group iam resources
 data "aws_iam_policy_document" "service_policy" {
   statement {
     sid = "1"
 
     actions = [
-      "s3:ListAllMyBuckets",
-      "s3:GetBucketLocation",
+        "autoscaling:Describe*",
+        "autoscaling:EnterStandby",
+        "autoscaling:ExitStandby",
+        "cloudformation:Describe*",
+        "cloudformation:GetTemplate",
+        "s3:Get*"
     ]
 
     resources = [
-      "arn:aws:s3:::lior",
+      "*",
     ]
   }
 }
@@ -51,6 +56,36 @@ resource "aws_iam_instance_profile" "asg_iam_profile" {
   role = "${aws_iam_role.asg_iam_role.name}"
 }
 
-output "basic_iam_id" {
+resource "aws_iam_role" "basic_app_role" {
+  name = "${var.service_name}_deploy"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "codedeploy.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+#code deployg group iam resources
+resource "aws_iam_role_policy_attachment" "AWSCodeDeployRole" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
+  role       = "${aws_iam_role.basic_app_role.name}"
+}
+
+output "asg_iam_profile_id" {
   value = "${aws_iam_instance_profile.asg_iam_profile.id}"
+}
+
+output "app_iam_role_arn" {
+  value = "${aws_iam_role.basic_app_role.arn}"
 }
