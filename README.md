@@ -1,4 +1,7 @@
-# ops_solution
+# Terraform_demo
+
+A simple demo to deploy highly available microservices to different regions in AWS.
+
 Dependencies:
 1. Terraform v0.11.8
 2. Please export the aws credintials to environment variables, using the following commands
